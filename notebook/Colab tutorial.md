@@ -33,13 +33,14 @@ Mental model: **4 places.** Your machine (VS Code, real disk) · GitHub (repo's 
 3. **Runtime → Run all.**
 4. First popup: *Permit access to Google Drive* → **Connect to Google Drive** → pick the account → on the long permission list (Drive, photos, mobile config…), **tick ALL boxes** (*Select all*) → Continue. Partial grants make the mount fail. Scope: your own notebook acting as you, this session only. Success = cell 1 prints `Mounted at /content/drive`.
 5. Watch the cells: Drive mount ✓ → repo cloned to `/content/instest` ✓ → pipeline cell runs.
-6. Session cells: **two cells per session** — *step 1 TRANSCRIBE* (audio → `X.transcript.md`; review it if you wish) then *step 2 GENERATE* (latest transcript → `X.questions.gift`). Run only the pair of the session that just ended. To run both in a row: click step 1, **Shift+Enter twice** (cells queue and execute in order) — or select both (click + Shift-click) → *Runtime → Run selection*.
+6. The Setup section ends with the **Course cell**: its `COURSE` field names the `course.yaml` applying to the sessions below.
+7. Session cells: **three cells per session** — *parameters* (`AUDIO`, `SESSION` fields; run first), *step 1 TRANSCRIBE* (audio → `X.transcript.md`; review it if you wish), *step 2 GENERATE* (latest transcript → `X.questions.gift`; runs without step 1 when a transcript already exists — the regeneration case). To chain cells: **Shift+Enter** repeatedly (cells queue in order), or select them → *Runtime → Run selection*.
 
 ## C. Editing and saving from class
 
 - **See/edit any file** (YAMLs, prompts): 📁 Files panel (left sidebar) → `/content/instest/…` → double-click to edit. Takes effect on the next run of the pipeline cell (do NOT re-run the sync cell before saving).
 - **⬆ PUSH cell** (bottom): run it after any edit, and always **before leaving class** → commits + pushes everything to GitHub. Wait for `✅ Pushed to GitHub`.
-- **⬆ Auto-PUSH cell** (Setup section, runs with *Run all*): pushes changed files every 10 min (`AUTOSAVE_MINUTES` field to adjust); its status line always shows the last successful push (✅) or a problem (⚠️). Safety net only — still run ⬆ PUSH at the end.
+- **⬆ Auto-PUSH cell** (Setup section, runs with *Run all*): first check immediately, then every `AUTOSAVE_MINUTES` minutes; its status line always shows the last successful push (✅ + time) or a problem (⚠️). Re-running the cell supersedes the previous loop (new interval). Safety net only — still run ⬆ PUSH at the end.
 - **The notebook itself** is the one file ⬆ PUSH does not cover: after editing *the notebook*, File → **Save a copy in GitHub** → keep the same path, untick *Include a link to Colab*.
 - Back home: `git pull` in `TSCT (v)` brings class edits to VS Code (or ask the AI).
 - **Notebook refresh**: the GitHub-opened notebook's URL is a live pointer — **F5 re-fetches the latest version** (bookmark that URL). Needed only when the notebook file itself changed; everything else syncs via the sync cell.
