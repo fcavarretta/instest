@@ -46,12 +46,25 @@ def plan_outputs(source: Path, out_dir: Path | None = None) -> OutputPlan:
 
 
 def find_latest_transcript(source: Path, out_dir: Path | None = None) -> Path:
-    """Head convention: the most recent transcript is the one with the canonical name."""
+    """Head convention: the most recent transcript is the one with the canonical
+    name <audio stem>.transcript.md beside the audio. Nothing is stored anywhere —
+    this is recomputed from the audio path every run. Fallback for reshuffled
+    files: a LONE *.transcript.md in the folder is accepted (with a notice)."""
     directory = out_dir or source.parent
     path = directory / f"{source.stem}.transcript.md"
-    if not path.exists():
-        raise FileNotFoundError(f"{path} not found — run the transcribe step first")
-    return path
+    if path.exists():
+        return path
+    candidates = sorted(directory.glob("*.transcript.md"))
+    if len(candidates) == 1:
+        print(f"ℹ️  no {path.name} here, but found a lone transcript — using {candidates[0].name}")
+        return candidates[0]
+    if candidates:
+        names = ", ".join(p.name for p in candidates)
+        raise FileNotFoundError(
+            f"{path.name} not found in {directory}, and several transcripts are present ({names}) — "
+            "rename the right one to match the audio, or pass --transcript explicitly"
+        )
+    raise FileNotFoundError(f"no transcript in {directory} (expected {path.name}) — run the transcribe step first")
 
 
 def _archive_if_exists(path: Path) -> None:
