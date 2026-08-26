@@ -84,7 +84,7 @@ audio_file: some.m4a                   #   default: none — the cell's AUDIO fi
 
 `question_count` cascades: settable in system, course, or session yaml — **lowest level wins**; error only if absent everywhere (system carries 10).
 
-`context_files` syntax — `[]` = empty list (line deletable); a folder is just a path that is a directory (→ its `.pdf`/`.txt`/`.md`, alphabetical); relative = from that yaml's own folder; absolute `/content/drive/…` allowed; ≤14 MB total:
+`context_files` syntax — `[]` = empty list (line deletable); entries: a file, a folder (→ its `.pdf`/`.txt`/`.md`, alphabetical), or a glob (`'*'`, `'slides/*.pdf'`); pipeline outputs (transcripts, questions, metadata, logs) are auto-excluded from folder/glob expansion; relative = from that yaml's own folder; absolute `/content/drive/…` allowed; ≤14 MB total:
 ```yaml
 context_files: [syllabus.pdf]                  # one file
 context_files: [slides, biblio.pdf]            # a folder + a file

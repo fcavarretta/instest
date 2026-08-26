@@ -119,6 +119,13 @@ def _resolve(base_dir: Path, value: str) -> Path:
 
 
 CONTEXT_EXTENSIONS = {".pdf", ".txt", ".md"}
+# Pipeline outputs never make sense as context (attaching the transcript would
+# duplicate it on top of the prompt); excluded from folder/glob expansion.
+_OUTPUT_MARKERS = (".transcript", ".questions", ".metadata", ".log")
+
+
+def _eligible_context(f: Path) -> bool:
+    return f.is_file() and f.suffix.lower() in CONTEXT_EXTENSIONS and not any(m in f.name for m in _OUTPUT_MARKERS)
 
 
 def _context_files(data: dict, path: Path) -> list[Path]:
@@ -127,14 +134,20 @@ def _context_files(data: dict, path: Path) -> list[Path]:
         raise ConfigError(f"{path}: 'context_files' must be a list")
     result: list[Path] = []
     for item in raw:
-        p = _resolve(path.parent, str(item))
-        if p.is_dir():
-            expanded = sorted(f for f in p.iterdir() if f.is_file() and f.suffix.lower() in CONTEXT_EXTENSIONS)
+        item = str(item)
+        p = _resolve(path.parent, item)
+        if "*" in item or "?" in item:
+            matches = sorted(f for f in p.parent.glob(p.name) if _eligible_context(f))
+            if not matches:
+                print(f"⚠️  {path}: context pattern '{item}' matched no {sorted(CONTEXT_EXTENSIONS)} files (outputs excluded)", file=sys.stderr)
+            result.extend(matches)
+        elif p.is_dir():
+            expanded = sorted(f for f in p.iterdir() if _eligible_context(f))
             if not expanded:
-                print(f"⚠️  {path}: context folder '{item}' contains no {sorted(CONTEXT_EXTENSIONS)} files", file=sys.stderr)
+                print(f"⚠️  {path}: context folder '{item}' contains no {sorted(CONTEXT_EXTENSIONS)} files (outputs excluded)", file=sys.stderr)
             result.extend(expanded)
         else:
-            result.append(p)
+            result.append(p)  # explicit single file: taken as-is, even an output, deliberately
     return result
 
 
