@@ -52,18 +52,10 @@ Mental model: **4 places.** Your machine (VS Code, real disk) · GitHub (repo's 
 | File | Scope | Holds | How it is found |
 |---|---|---|---|
 | `system.yaml` | everything | models, reserve %, prompt templates, pricing | by the code (next to it, in `resources/`); `--system` overrides |
-| `course.yaml` | one course | course name, languages, course prompt, course context | **parent-of-parent of the session file** |
-| `session-*.yaml` | one session | id, date, session prompt, question count, session context | **the `SESSION` field of the notebook cell** — the single entry point |
+| `course.yaml` | one course | course name, languages, course prompt, course context | **the `COURSE` field** (Setup section) |
+| `session-*.yaml` | one session | id, date, session prompt, question count, session context | **the `SESSION` field** of the session's parameters cell |
 
-**One rule**: the session yaml's folder must have a parent containing `course.yaml`. The pair can live anywhere — repo or Drive. The cell's `SESSION` field binds everything.
-
-**Layout (e.g. on Drive)** → `SESSION = /content/drive/MyDrive/_TSCT/MonCours/sessions/s1.yaml`:
-
-```
-MyDrive/_TSCT/MonCours/
-├── course.yaml
-└── sessions/s1.yaml
-```
+**No structural constraint**: both files can live anywhere (Drive or repo), any names, flat or nested — the two notebook fields bind everything. (Fallback for bare CLI use: with no `--course`, a file named `course.yaml` two levels above the session file is tried.)
 
 Convention: `*` = compulsory (run fails without it) · unmarked = optional, comment states the default behavior when absent.
 

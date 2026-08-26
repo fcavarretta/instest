@@ -34,6 +34,7 @@ TRANSCRIPT_PLACEHOLDER = "[... transcript inserted here at run time ...]"
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate a Moodle GIFT quiz from a recorded lecture.")
     parser.add_argument("session", type=Path, help="path to the session YAML (its course folder must hold course.yaml)")
+    parser.add_argument("--course", type=Path, default=None, help="the course.yaml to use (default: two levels above the session file)")
     parser.add_argument("--system", type=Path, default=None, help="override resources/system.yaml")
     parser.add_argument("--env-file", type=Path, default=None, help="override the Gemini key env file")
     parser.add_argument("--dry-run", action="store_true", help="render prompts and plan, no API call")
@@ -57,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        cfg = load_config(args.session, args.system, args.model_transcription, args.model_generation)
+        cfg = load_config(args.session, args.system, args.model_transcription, args.model_generation, args.course)
     except ConfigError as e:
         print(f"❌ config: {e}", file=sys.stderr)
         return 1
@@ -75,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
     session_path = args.session.resolve()
     mtime = datetime.datetime.fromtimestamp(session_path.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
     print(f"⚙️  Session file: {session_path}  (modified {mtime})")
-    print(f"   Course file:  {find_course_yaml(session_path)}")
+    print(f"   Course file:  {find_course_yaml(session_path, args.course)}")
     prompt_preview = (cfg.session_prompt[:60] + "…") if len(cfg.session_prompt) > 60 else (cfg.session_prompt or "(none)")
     print(f"   Questions: {cfg.question_count} +{cfg.reserve_percent}% → {cfg.question_count_total} · quiz language: {cfg.question_language} · session prompt: {prompt_preview}")
 

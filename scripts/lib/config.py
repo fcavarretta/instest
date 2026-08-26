@@ -163,14 +163,21 @@ def _call_settings(data: dict, section: str, path: Path) -> CallSettings:
     )
 
 
-def find_course_yaml(session_path: Path) -> Path:
-    course_path = session_path.parent.parent / "course.yaml"
-    if not course_path.exists():
+def find_course_yaml(session_path: Path, course_path: Path | str | None = None) -> Path:
+    """Explicit course path wins (notebook COURSE field / --course); fallback:
+    a file named course.yaml two levels above the session file."""
+    if course_path:
+        course_path = Path(course_path).resolve()
+        if not course_path.exists():
+            raise ConfigError(f"{course_path}: course file not found (given via --course / COURSE)")
+        return course_path
+    fallback = session_path.parent.parent / "course.yaml"
+    if not fallback.exists():
         raise ConfigError(
-            f"{course_path}: not found — expected layout is courses/<CODE>/course.yaml "
-            f"with sessions in courses/<CODE>/sessions/ (session file given: {session_path})"
+            f"no course file: pass one explicitly (notebook COURSE field / --course), "
+            f"or place course.yaml two levels above the session file (looked at {fallback})"
         )
-    return course_path
+    return fallback
 
 
 def load_config(
@@ -178,10 +185,11 @@ def load_config(
     system_path: Path | None = None,
     model_transcription: str | None = None,
     model_generation: str | None = None,
+    course_path: Path | str | None = None,
 ) -> RunConfig:
     session_path = Path(session_path).resolve()
     system_path = Path(system_path).resolve() if system_path else DEFAULT_SYSTEM_PATH
-    course_path = find_course_yaml(session_path)
+    course_path = find_course_yaml(session_path, course_path)
 
     system = load_yaml(system_path)
     course = load_yaml(course_path)
