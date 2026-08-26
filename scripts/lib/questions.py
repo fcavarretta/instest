@@ -100,7 +100,21 @@ def parse_questions(raw: str) -> list[Question]:
     items = payload["questions"]
     if not items:
         raise QuestionError("model returned an empty 'questions' list")
-    return [_parse_one(item, n) for n, item in enumerate(items, start=1)]
+    # One malformed question must not kill the batch (seen 2026-08-26: an mcq
+    # missing correct_index). Skip it LOUDLY; fail only if nothing survives.
+    questions: list[Question] = []
+    errors: list[str] = []
+    for n, item in enumerate(items, start=1):
+        try:
+            questions.append(_parse_one(item, n))
+        except QuestionError as e:
+            errors.append(str(e))
+            print(f"⚠️  skipped invalid {e}", file=sys.stderr)
+    if not questions:
+        raise QuestionError(f"all {len(items)} questions invalid — first error: {errors[0]}")
+    if errors:
+        print(f"⚠️  {len(errors)} of {len(items)} questions skipped — review coverage", file=sys.stderr)
+    return questions
 
 
 def check_count(questions: list[Question], expected_total: int, target: int) -> None:
