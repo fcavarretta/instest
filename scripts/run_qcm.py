@@ -138,13 +138,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"❌ secrets: {e}", file=sys.stderr)
         return 1
 
-    if args.generate_only:
-        roles: tuple[str, ...] = ("questions.gift", "questions.json")
-    elif args.transcribe_only:
-        roles = ("transcript.md",)
-    else:
-        roles = runfolder.ROLES
-    plan = runfolder.plan_outputs(source, out_dir, roles)
+    plan = runfolder.plan_outputs(source, out_dir)
     print(f"📁 Outputs: {plan.describe()}")
     usages = []
 

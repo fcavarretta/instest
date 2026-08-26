@@ -1,8 +1,13 @@
-"""Output naming (FC design decision, 2026-08-25 — replaces dated run folders):
+"""Output naming (FC design decisions, 2026-08-25/26):
 artifacts sit beside the audio file (or in an override folder), named after it:
 <stem>.transcript.md, <stem>.questions.gift, <stem>.questions.json,
-<stem>.metadata.yaml. Never-erase: if artifacts for <stem> already exist, the
-run uses a numbered stem <stem>.2, <stem>.3, …
+<stem>.metadata.yaml.
+
+Head convention (2026-08-26, replaces the numbered-stem scheme): the canonical
+name always holds the MOST RECENT version. Before overwriting, the existing
+file is archived in place by appending its own modification timestamp before
+the final extension: x.questions-2026-08-25 19-36-13.gift. metadata.yaml is
+the exception: it is a log and accumulates calls in place (see write_metadata).
 """
 
 from __future__ import annotations
@@ -19,10 +24,6 @@ from .costs import CallUsage
 
 _FRONT_MATTER = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
 
-# metadata.yaml is absent on purpose: it appends across phases (see write_metadata).
-ROLES = ("transcript.md", "questions.gift", "questions.json")
-
-
 @dataclass(frozen=True)
 class OutputPlan:
     directory: Path
@@ -35,37 +36,42 @@ class OutputPlan:
         return str(self.directory / f"{self.stem}.*")
 
 
-def plan_outputs(source: Path, out_dir: Path | None = None, roles: tuple[str, ...] = ROLES) -> OutputPlan:
-    """source = the audio file, or an existing X.transcript.md in --generate-only.
-
-    `roles` = the artifacts this run will write; the never-erase numbering only
-    considers those, so a generate-only run pairs its questions with the
-    existing transcript instead of bumping to a new stem."""
+def plan_outputs(source: Path, out_dir: Path | None = None) -> OutputPlan:
+    """source = the audio file, or an existing X.transcript.md in --generate-only."""
     directory = out_dir or source.parent
     base = source.stem
     if base.endswith(".transcript"):
         base = base[: -len(".transcript")]
-    stem, n = base, 1
-    while any((directory / f"{stem}.{role}").exists() for role in roles):
-        n += 1
-        stem = f"{base}.{n}"
-    return OutputPlan(directory, stem)
+    return OutputPlan(directory, base)
 
 
 def find_latest_transcript(source: Path, out_dir: Path | None = None) -> Path:
-    """Most recent X*.transcript.md for this audio file (numbered re-runs included)."""
-    import glob as _glob
-
+    """Head convention: the most recent transcript is the one with the canonical name."""
     directory = out_dir or source.parent
-    candidates = list(directory.glob(f"{_glob.escape(source.stem)}*.transcript.md"))
-    if not candidates:
-        raise FileNotFoundError(f"no transcript found for {source.stem} in {directory} — run the transcribe step first")
-    return max(candidates, key=lambda p: p.stat().st_mtime)
+    path = directory / f"{source.stem}.transcript.md"
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found — run the transcribe step first")
+    return path
 
 
-def _write(plan: OutputPlan, role: str, text: str) -> Path:
+def _archive_if_exists(path: Path) -> None:
+    """Head convention: rename an existing file with its own mtime stamp before replacing it."""
+    if not path.exists():
+        return
+    mtime = datetime.datetime.fromtimestamp(path.stat().st_mtime)
+    head, ext = path.name.rsplit(".", 1)
+    archived = path.with_name(f"{head}-{mtime.strftime('%Y-%m-%d %H-%M-%S')}.{ext}")
+    if archived.exists():  # same-second collision: add microseconds
+        archived = path.with_name(f"{head}-{mtime.strftime('%Y-%m-%d %H-%M-%S.%f')}.{ext}")
+    path.rename(archived)
+    print(f"♻️  previous {path.name} kept as {archived.name}")
+
+
+def _write(plan: OutputPlan, role: str, text: str, archive: bool = True) -> Path:
     plan.directory.mkdir(parents=True, exist_ok=True)
     path = plan.path(role)
+    if archive:
+        _archive_if_exists(path)
     path.write_text(text, encoding="utf-8")
     return path
 
@@ -103,8 +109,8 @@ def read_transcript(path: Path) -> str:
 
 
 def write_metadata(plan: OutputPlan, data: dict) -> Path:
-    """Appends across phases: a transcribe-only run then a generate-only run
-    accumulate their calls in the same X.metadata.yaml (a log grows, it is not erased)."""
+    """metadata.yaml is a log: it accumulates calls in place (never archived) —
+    a transcribe phase, its generate phase, and later regenerations all append."""
     path = plan.path("metadata.yaml")
     if path.exists():
         try:
@@ -119,4 +125,4 @@ def write_metadata(plan: OutputPlan, data: dict) -> Path:
             "calls": calls,
             "total_usd_estimate": round(sum(e for e in estimates), 4) if all(e is not None for e in estimates) else None,
         }
-    return _write(plan, "metadata.yaml", yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
+    return _write(plan, "metadata.yaml", yaml.safe_dump(data, sort_keys=False, allow_unicode=True), archive=False)
