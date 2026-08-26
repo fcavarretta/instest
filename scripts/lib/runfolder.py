@@ -55,16 +55,19 @@ def find_latest_transcript(source: Path, out_dir: Path | None = None) -> Path:
 
 
 def _archive_if_exists(path: Path) -> None:
-    """Head convention: rename an existing file with its own mtime stamp before replacing it."""
+    """Head convention: before replacing a file, move the existing one into an
+    old/ subfolder beside it, renamed with its own mtime stamp."""
     if not path.exists():
         return
+    old_dir = path.parent / "old"
+    old_dir.mkdir(exist_ok=True)
     mtime = datetime.datetime.fromtimestamp(path.stat().st_mtime)
     head, ext = path.name.rsplit(".", 1)
-    archived = path.with_name(f"{head}-{mtime.strftime('%Y-%m-%d %H-%M-%S')}.{ext}")
+    archived = old_dir / f"{head}-{mtime.strftime('%Y-%m-%d %H-%M-%S')}.{ext}"
     if archived.exists():  # same-second collision: add microseconds
-        archived = path.with_name(f"{head}-{mtime.strftime('%Y-%m-%d %H-%M-%S.%f')}.{ext}")
+        archived = old_dir / f"{head}-{mtime.strftime('%Y-%m-%d %H-%M-%S.%f')}.{ext}"
     path.rename(archived)
-    print(f"♻️  previous {path.name} kept as {archived.name}")
+    print(f"♻️  previous {path.name} kept as old/{archived.name}")
 
 
 def _write(plan: OutputPlan, role: str, text: str, archive: bool = True) -> Path:

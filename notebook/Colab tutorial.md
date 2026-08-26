@@ -123,7 +123,7 @@ Outputs land **beside the audio file** (the cell's `OUTPUT` field, optional, red
 - `X.questions.json` — raw model output (debug / regeneration)
 - `X.metadata.yaml` — tokens + $ per call
 
-**Head convention**: the canonical name always holds the most recent version; on a re-run, the previous file is archived beside it with its own timestamp (`X.questions-2026-08-25 19-36-13.gift`) — the console prints a ♻️ line when that happens. `X.metadata.yaml` is a log: it accumulates all calls in place. Cost prints at the end of the cell.
+**Head convention**: the canonical name always holds the most recent version; on a re-run, the previous file moves into an `old/` subfolder beside it, renamed with its own timestamp (`old/X.questions-2026-08-25 19-36-13.gift`) — the console prints a ♻️ line when that happens. `X.metadata.yaml` is a log: it accumulates all calls in place. Cost prints at the end of the cell.
 
 ## F. Production — after a real class
 
