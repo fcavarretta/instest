@@ -64,20 +64,30 @@ def _parse_one(item: dict, n: int) -> Question:
     answer: bool | None = None
 
     if qtype == "mcq":
-        raw_options = item.get("options")
-        if not isinstance(raw_options, list) or len(raw_options) < 2:
-            raise QuestionError(f"{where}: mcq needs an options list with at least 2 entries")
-        options = tuple(_norm(o) for o in raw_options)
+        # Primary format (2026-08-26): "correct" as TEXT + "distractors" — Gemini 3
+        # reliably states the answer but omits bookkeeping like correct_index.
+        if item.get("correct") is not None:
+            correct = _norm(item["correct"])
+            raw_d = item.get("distractors")
+            if not correct or not isinstance(raw_d, list) or not raw_d:
+                raise QuestionError(f"{where}: mcq needs 'correct' (text) and a 'distractors' list")
+            options = (correct,) + tuple(_norm(d) for d in raw_d)
+            correct_index = 0
+        else:  # legacy format: options + correct_index
+            raw_options = item.get("options")
+            if not isinstance(raw_options, list) or len(raw_options) < 2:
+                raise QuestionError(f"{where}: mcq needs 'correct'+'distractors' (or legacy 'options'+'correct_index')")
+            options = tuple(_norm(o) for o in raw_options)
+            ci = item.get("correct_index")
+            if not isinstance(ci, int) or isinstance(ci, bool) or not (0 <= ci < len(options)):
+                raise QuestionError(f"{where}: correct_index must be an integer in [0, {len(options) - 1}], got {ci!r}")
+            correct_index = ci
         if any(not o for o in options):
             raise QuestionError(f"{where}: empty option")
         if len({o.lower() for o in options}) != len(options):
             raise QuestionError(f"{where}: duplicate options")
         if len(options) != EXPECTED_OPTIONS:
             print(f"⚠️  {where}: {len(options)} options (expected {EXPECTED_OPTIONS}) — kept", file=sys.stderr)
-        ci = item.get("correct_index")
-        if not isinstance(ci, int) or isinstance(ci, bool) or not (0 <= ci < len(options)):
-            raise QuestionError(f"{where}: correct_index must be an integer in [0, {len(options) - 1}], got {ci!r}")
-        correct_index = ci
     else:
         raw_answer = item.get("answer")
         if not isinstance(raw_answer, bool):

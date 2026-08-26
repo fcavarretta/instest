@@ -28,7 +28,7 @@ $course_prompt
 Teacher's instructions for THIS session — these take priority over everything above except the output format (may be empty):
 $session_prompt
 
-Return ONLY a JSON object of the form {"questions": [...]} matching the response schema you were given. No prose, no markdown fences. Each question object MUST contain: "type" ("mcq" or "truefalse"), "name", "stem", "feedback"; every "mcq" MUST also contain "options" (exactly 4 strings) and "correct_index" (REQUIRED — the 0-based integer index of the correct option); every "truefalse" MUST also contain "answer" (REQUIRED — true or false). A question missing its correct_index or answer is discarded.
+Return ONLY a JSON object of the form {"questions": [...]} matching the response schema you were given. No prose, no markdown fences. Each question object MUST contain: "type" ("mcq" or "truefalse"), "name", "stem", "feedback"; every "mcq" MUST also contain "correct" (REQUIRED — the full text of the correct option) and "distractors" (REQUIRED — exactly 3 plausible wrong options); every "truefalse" MUST also contain "answer" (REQUIRED — true or false). A question missing its "correct" or "answer" is discarded.
 
 The transcript of the session follows:
 
