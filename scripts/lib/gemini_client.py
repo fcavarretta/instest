@@ -149,11 +149,12 @@ def _generation_config(settings: CallSettings, json_schema: dict | None) -> dict
     return cfg
 
 
-def _post(model: str, body: dict, api_key: str) -> dict:
+def _post(model: str, body: dict, api_key: str, fast_fail: bool = False) -> dict:
     url = f"{API_BASE}/{model}:generateContent"
     payload = json.dumps(body).encode("utf-8")
+    delays = () if fast_fail else RETRY_DELAYS
     last_error = "no attempt made"
-    for attempt in range(len(RETRY_DELAYS) + 1):
+    for attempt in range(len(delays) + 1):
         request = urllib.request.Request(
             url,
             data=payload,
@@ -170,11 +171,11 @@ def _post(model: str, body: dict, api_key: str) -> dict:
                 raise ApiError(last_error) from e
         except urllib.error.URLError as e:
             last_error = f"network error: {e.reason}"
-        if attempt < len(RETRY_DELAYS):
-            delay = RETRY_DELAYS[attempt]
+        if attempt < len(delays):
+            delay = delays[attempt]
             print(f"   retrying in {delay}s ({last_error[:120]})", file=sys.stderr)
             time.sleep(delay)
-    raise ApiError(f"giving up after {len(RETRY_DELAYS) + 1} attempts — {last_error}")
+    raise ApiError(f"giving up after {len(delays) + 1} attempts — {last_error}")
 
 
 def _extract(data: dict) -> tuple[str, str]:
@@ -199,13 +200,14 @@ def call_model(
     *,
     call_name: str,
     json_schema: dict | None = None,
+    fast_fail: bool = False,
 ) -> tuple[str, CallUsage]:
     body = {
         "contents": [{"role": "user", "parts": parts}],
         "generationConfig": _generation_config(settings, json_schema),
     }
     start = time.monotonic()
-    data = _post(model, body, api_key)
+    data = _post(model, body, api_key, fast_fail=fast_fail)
     text, finish = _extract(data)
     um = data.get("usageMetadata") or {}
     usage = CallUsage(

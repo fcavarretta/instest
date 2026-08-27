@@ -33,7 +33,7 @@ Mental model: **4 places.** Your machine (VS Code, real disk) · GitHub (repo's 
 3. **Runtime → Run all.**
 4. First popup: *Permit access to Google Drive* → **Connect to Google Drive** → pick the account → on the long permission list (Drive, photos, mobile config…), **tick ALL boxes** (*Select all*) → Continue. Partial grants make the mount fail. Scope: your own notebook acting as you, this session only. Success = cell 1 prints `Mounted at /content/drive`.
 5. Watch the cells: Drive mount ✓ → repo cloned to `/content/instest` ✓ → pipeline cell runs.
-6. The Setup section ends with the **Course cell**: its `COURSE` field names the `course.yaml` applying to the sessions below.
+6. The Setup section ends with the **🩺 MODELS CHECK** (a tiny live ping per model: key valid, quota not exhausted — ⛔ means do not count on it in class; true billing balance is only visible in Google Cloud → Billing → Budgets, set an alert there) and the **Course cell**: its `COURSE` field names the `course.yaml` applying to the sessions below.
 7. Session cells: **three cells per session** — *parameters* (`AUDIO`, `SESSION` fields; run first), *step 1 TRANSCRIBE* (audio → `X.transcript.md`; review it if you wish), *step 2 GENERATE* (latest transcript → `X.questions.gift`; runs without step 1 when a transcript already exists — the regeneration case). To chain cells: **Shift+Enter** repeatedly (cells queue in order), or select them → *Runtime → Run selection*.
 
 ## C. Editing and saving from class
