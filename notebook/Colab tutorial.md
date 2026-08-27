@@ -1,7 +1,7 @@
 ---
 title: TSCT Colab tutorial
 created: 2026-08-25
-modified: 2026-08-26
+modified: 2026-08-27
 intent: terse step-by-step operation of the QCM pipeline in Colab
 tags: [tsct, colab, tutorial, workflow]
 ---
