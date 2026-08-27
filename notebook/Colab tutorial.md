@@ -108,13 +108,13 @@ generation:                          # *
   thinking_level: high               #   default: model decides
 output_root: null                    #   folder override — default: outputs beside the audio (cell's OUTPUT wins)
 prompts:                             # *
-  transcription: prompts/transcription.md    # * prompt TEXTS live in these .md files
-  generation: prompts/generation_system.md   # *
+  transcription: prompts/transcription.txt    # * prompt TEXTS live in these .txt files (txt so Colab can edit them; .md is preview-only there)
+  generation: prompts/generation_system.txt   # *
 gift:
   category_header: true              #   $CATEGORY line in the .gift — default: true
 pricing: {…}                         #   $/1M for the cost log only — default: cost shown as "no pricing entry"
 ```
-Worth changing: `models`, `reserve_percent`, `temperature`s, and the prompt `.md` texts. The rest is plumbing.
+Worth changing: `models`, `reserve_percent`, `temperature`s, and the prompt `.txt` texts. The rest is plumbing.
 
 ## E. Results
 

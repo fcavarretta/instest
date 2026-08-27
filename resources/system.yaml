@@ -31,8 +31,8 @@ generation:
 output_root: null              # optional override folder; default = outputs beside the audio file
 
 prompts:
-  transcription: prompts/transcription.md
-  generation: prompts/generation_system.md
+  transcription: prompts/transcription.txt
+  generation: prompts/generation_system.txt
 
 gift:
   category_header: true        # emit $CATEGORY line so imports land in their own Moodle category
