@@ -153,7 +153,9 @@ def main(argv: list[str] | None = None) -> int:
                 transcript, usage = gemini_client.transcribe(cfg, transcription_prompt, api_key)
             except gemini_client.TruncationError as e:
                 path = runfolder.write_text(plan, "transcript.partial.md", e.partial_text)
-                print(f"❌ {e} — partial saved to {path}", file=sys.stderr)
+                banner = "⛔" * 30
+                print(f"\n{banner}\n⛔ TRANSCRIPT TRUNCATED — INCOMPLETE, DO NOT USE AS-IS\n"
+                      f"⛔ {e}\n⛔ partial saved to {path}\n{banner}", file=sys.stderr)
                 return 1
             usages.append(usage)
             path = runfolder.write_transcript(plan, cfg, transcript, usage)
@@ -166,7 +168,9 @@ def main(argv: list[str] | None = None) -> int:
                 raw, usage = gemini_client.generate_questions(cfg, generation_prompt, api_key)
             except gemini_client.TruncationError as e:
                 path = runfolder.write_text(plan, "questions.partial.json", e.partial_text)
-                print(f"❌ {e} — partial saved to {path}", file=sys.stderr)
+                banner = "⛔" * 30
+                print(f"\n{banner}\n⛔ QUESTIONS TRUNCATED — INCOMPLETE, DO NOT USE\n"
+                      f"⛔ {e}\n⛔ partial saved to {path}\n{banner}", file=sys.stderr)
                 return 1
             usages.append(usage)
             runfolder.write_text(plan, "questions.json", raw)

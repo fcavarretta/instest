@@ -119,13 +119,60 @@ def prepare_audio(path: Path) -> Path:
     if result.returncode != 0:
         raise ApiError(f"ffmpeg failed on {path.name}: {result.stderr.strip()[:500]}")
     new_size = cache.stat().st_size
-    if new_size > MAX_INLINE_SOURCE_BYTES:
-        raise ApiError(
-            f"even compressed, {cache.name} is {new_size / 1e6:.0f} MB > inline cap — "
-            "the recording is too long for the inline route; the Files API upgrade is needed"
-        )
     print(f"   → {cache.name}: {new_size / 1e6:.1f} MB")
     return cache
+
+
+UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files"
+
+
+def upload_file(path: Path, api_key: str) -> dict:
+    """Files API resumable upload — for audio beyond the inline cap. Two HTTP
+    calls (start -> upload+finalize), then poll until the file is ACTIVE.
+    Returns the file info dict (its 'uri' goes into a file_data part)."""
+    data = path.read_bytes()
+    mime = mime_for(path)
+    try:
+        start = urllib.request.Request(
+            UPLOAD_URL,
+            data=json.dumps({"file": {"display_name": path.name}}).encode(),
+            headers={
+                "x-goog-api-key": api_key,
+                "Content-Type": "application/json",
+                "X-Goog-Upload-Protocol": "resumable",
+                "X-Goog-Upload-Command": "start",
+                "X-Goog-Upload-Header-Content-Length": str(len(data)),
+                "X-Goog-Upload-Header-Content-Type": mime,
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(start, timeout=60) as r:
+            upload_url = r.headers.get("X-Goog-Upload-URL")
+        if not upload_url:
+            raise ApiError("Files API: no upload URL returned")
+        up = urllib.request.Request(
+            upload_url,
+            data=data,
+            headers={"X-Goog-Upload-Command": "upload, finalize", "X-Goog-Upload-Offset": "0"},
+            method="POST",
+        )
+        with urllib.request.urlopen(up, timeout=600) as r:
+            info = json.loads(r.read().decode("utf-8"))["file"]
+    except urllib.error.HTTPError as e:
+        raise ApiError(f"Files API upload HTTP {e.code}: {e.read().decode('utf-8', errors='replace')[:400]}") from e
+    except urllib.error.URLError as e:
+        raise ApiError(f"Files API upload network error: {e.reason}") from e
+    name = info.get("name", "")
+    for _ in range(60):
+        if info.get("state") == "ACTIVE":
+            return info
+        time.sleep(2)
+        req = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/{name}", headers={"x-goog-api-key": api_key}
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            info = json.loads(r.read().decode("utf-8"))
+    raise ApiError(f"Files API: uploaded file never became ACTIVE (state: {info.get('state')})")
 
 
 def _inline_part(path: Path) -> dict:
@@ -233,7 +280,15 @@ def call_model(
 
 def transcribe(cfg: RunConfig, prompt_text: str, api_key: str) -> tuple[str, CallUsage]:
     audio = prepare_audio(cfg.audio_file)
-    parts = [_inline_part(audio), {"text": prompt_text}]
+    size = audio.stat().st_size
+    if size <= MAX_INLINE_SOURCE_BYTES:
+        first: dict = _inline_part(audio)
+    else:
+        print(f"📤 {audio.name} ({size / 1e6:.0f} MB) exceeds the inline cap — uploading via the Files API…")
+        info = upload_file(audio, api_key)
+        print(f"   uploaded ✓ (Google keeps it 48 h)")
+        first = {"file_data": {"mime_type": mime_for(audio), "file_uri": info["uri"]}}
+    parts = [first, {"text": prompt_text}]
     return call_model(cfg.model_transcription, parts, cfg.transcription, api_key, call_name="transcription")
 
 
