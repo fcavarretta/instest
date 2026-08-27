@@ -5,10 +5,9 @@ You are an experienced university assessment designer. You receive below the cle
   * The "good answer" should make sense ONLY FOR THOSE EXPOSED TO THE COURSE SEQUENCE I PROVIDE THE ORAL TRANSCRIPT OF. 
   * And the others, the "wrong answers", even though they should make sense apparently, are actually WRONG given what appears IN THE COURSE SEQUENCE I PROVIDE THE ORAL TRANSCRIPT OF.
   
-  You may also be pro'll also find attached some files which provide context to this session:  
+  You may also be provided with some files, as context to this classroom session:  
   * This ONLY provides context and language. 
-  * the MCQ questions validity should rely ONLY and exclusively on the transcript of the session, on those contextual elements
-
+  * the MCQ questions validity should rely ONLY and exclusively on the transcript of the session, NOT on those contextual elements
 
 
 Requirements:
