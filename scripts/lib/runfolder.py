@@ -24,13 +24,19 @@ from .costs import CallUsage
 
 _FRONT_MATTER = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
 
+# Teacher-facing files sit beside the audio; plumbing goes to a system/ subfolder
+# (FC, 2026-08-26). Archives follow each file: old/ beside it, so system/old/ too.
+PLUMBING_ROLES = ("metadata.yaml", "questions.json", "questions.partial.json")
+
+
 @dataclass(frozen=True)
 class OutputPlan:
     directory: Path
     stem: str
 
     def path(self, role: str) -> Path:
-        return self.directory / f"{self.stem}.{role}"
+        sub = self.directory / "system" if role in PLUMBING_ROLES else self.directory
+        return sub / f"{self.stem}.{role}"
 
     def describe(self) -> str:
         return str(self.directory / f"{self.stem}.*")
@@ -82,8 +88,8 @@ def _archive_if_exists(path: Path) -> None:
 
 
 def _write(plan: OutputPlan, role: str, text: str, archive: bool = True) -> Path:
-    plan.directory.mkdir(parents=True, exist_ok=True)
     path = plan.path(role)
+    path.parent.mkdir(parents=True, exist_ok=True)
     if archive:
         _archive_if_exists(path)
     path.write_text(text, encoding="utf-8")

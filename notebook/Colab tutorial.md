@@ -121,8 +121,8 @@ Worth changing: `models`, `reserve_percent`, `temperature`s, and the prompt `.tx
 Outputs land **beside the audio file** (the cell's `OUTPUT` field, optional, redirects them to a folder), named after it:
 - `X.transcript.md` — clean transcript (the archive; reusable via `--generate-only`)
 - `X.questions.gift` — review, then import into Moodle
-- `X.questions.json` — raw model output (debug / regeneration)
-- `X.metadata.yaml` — tokens + $ per call
+- `system/X.questions.json` — raw model output (debug / regeneration)
+- `system/X.metadata.yaml` — tokens + $ per call (plumbing lives in `system/`, keeping the folder clean)
 
 **Head convention**: the canonical name always holds the most recent version; on a re-run, the previous file moves into an `old/` subfolder beside it, renamed with its own timestamp (`old/X.questions-2026-08-25 19-36-13.gift`) — the console prints a ♻️ line when that happens. `X.metadata.yaml` is a log: it accumulates all calls in place. Cost prints at the end of the cell.
 
