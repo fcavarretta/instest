@@ -147,4 +147,6 @@ Outputs land **beside the audio file** (the cell's `OUTPUT` field, optional, red
 | `GEMINI_API_KEY not found` | secret missing or *Notebook access* off | 🔑 panel: add/enable, then Runtime → Restart and run all |
 | `no audio source` | neither `--audio` nor `audio_file` set | fix the `AUDIO` path in the session cell |
 | Audio file not found | wrong Drive path | check exact path in Drive; prefix is `/content/drive/MyDrive/` |
+| Auto-push status frozen (old `checked HH:MM`) | the runtime died (idle ~90 min kills it); a dead kernel cannot update the display | Reconnect → *Run all*; the `checked` time IS the freshness indicator |
+| `PUSH NOT POSSIBLE` right after a runtime restart | remote not re-pointed with the token yet | run ⬇ PULL, then re-run Auto-PUSH; if it persists, read its `git said:` line |
 | Cell output turns red, other cases | — | copy the whole cell output to the AI |
